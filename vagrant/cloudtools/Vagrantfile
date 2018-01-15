@@ -1,0 +1,47 @@
+$script = <<SCRIPT
+
+
+  ### KBCTL ###
+  curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl > /dev/null 2>&1
+  chmod +x ./kubectl
+  sudo mv ./kubectl /usr/local/bin/kubectl
+
+  ### HELM ###
+  curl https://kubernetes-helm.storage.googleapis.com/helm-v2.7.2-linux-amd64.tar.gz -o helm-v2.7.2-linux-amd64.tar.gz > /dev/null 2>&1
+  tar xvfz helm-v2.7.2-linux-amd64.tar.gz
+  chmod +x linux-amd64/helm
+  sudo mv linux-amd64/helm /usr/local/bin/helm
+
+  ### PIP ###
+  curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py > /dev/null 2>&1
+  sudo python get-pip.py
+
+  ### AWS ###
+  pip install awscli
+
+  ### KOPS ###
+  curl -LO https://github.com/kubernetes/kops/releases/download/$(curl -s https://api.github.com/repos/kubernetes/kops/releases/latest | grep tag_name | cut -d '"' -f 4)/kops-linux-amd64 > /dev/null 2>&1
+  chmod +x kops-linux-amd64
+  sudo mv kops-linux-amd64 /usr/local/bin/kops
+  sed 's/\r$//' < kops-init-raw.sh > kops-init.sh
+  chmod +x kops-init.sh
+
+  ### jq ###
+  curl -LO  https://github.com/stedolan/jq/releases/download/$(curl -s  https://github.com/stedolan/jq/releases/latest | grep -P '(?<=(/tag/))(.*)(?=\")' -o)/jq-linux64 > /dev/null 2>&1
+  chmod +x jq-linux64
+  sudo mv jq-linux64 /usr/local/bin/jq
+
+  ### fly ###
+  curl -LO https://github.com/concourse/concourse/releases/download/$(curl -s  https://github.com/concourse/concourse/releases/latest | grep -P '(?<=(/tag/))(.*)(?=\")' -o)/fly_linux_amd64 > /dev/null 2>&1
+  chmod +x fly_linux_amd64
+  sudo mv fly_linux_amd64 /usr/local/bin/fly
+
+SCRIPT
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "dellemc/ubuntu1604"
+  config.vm.network "private_network", type: "dhcp"
+  config.vm.synced_folder "c:/Users/dkhilc/.aws", "/home/vagrant/.aws"
+  config.vm.provision "file", source:"kops-init.sh", destination: "$HOME/kops-init-raw.sh"
+  config.vm.provision "shell", inline: $script  
+end
